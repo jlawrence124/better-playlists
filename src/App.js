@@ -127,13 +127,16 @@ class App extends Component {
       this.state.serverData.user ?
 
       // filter playlists
-      this.state.serverData.user.playlists.filter(playlist => 
+      this.state.serverData.user.playlists.filter(playlist =>
 
       /* makes search queries case insensitive by reducing playlist names
-      and filter queries toLowerCase */
+        and filter queries toLowerCase */
         playlist.name.toLowerCase().includes(
           this.state.filterString.toLowerCase())
-      ) : []
+      )
+
+      //if serverData user does not exist, return an empty array
+      : []
 
     return (
       <div className="App">
