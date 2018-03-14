@@ -122,6 +122,18 @@ class App extends Component {
     }, 1000);
   }
   render() {
+    let playlistToRender =
+      // if serverData user exits
+      this.state.serverData.user ?
+
+      // filter playlists
+      this.state.serverData.user.playlists.filter(playlist => 
+
+      /* makes search queries case insensitive by reducing playlist names
+      and filter queries toLowerCase */
+        playlist.name.toLowerCase().includes(
+          this.state.filterString.toLowerCase())
+      ) : []
 
     return (
       <div className="App">
@@ -135,22 +147,16 @@ class App extends Component {
             </h1>
 
           {/* sets props for PlaylistCounter component */}
-          <PlaylistCounter playlists={this.state.serverData.user.playlists}/>
+          <PlaylistCounter playlists={playlistToRender}/>
 
           {/* sets props for HoursCounter component */}
-          <HoursCounter playlists={this.state.serverData.user.playlists}/>
+          <HoursCounter playlists={playlistToRender}/>
 
           {/* when text changes in the filter component, change the state of the filterString object */}
           <Filter onTextChange={text => this.setState({filterString: text})}/>
 
-          {/* Filters and then maps all playlists based on user input */}
-          {this.state.serverData.user.playlists.filter(playlist =>
-
-            /* makes search queries case insensitive by reducing playlist names
-            and filter queries toLowerCase */
-            playlist.name.toLowerCase().includes(
-            this.state.filterString.toLowerCase())
-            ).map((playlist) =>
+          {/* maps all playlists based on user input */}
+          {playlistToRender.map((playlist) =>
               <Playlist key={playlist.name} playlist={playlist} />
           )}
           </div>
