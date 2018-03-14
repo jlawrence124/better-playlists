@@ -5,6 +5,7 @@ let defaultStyle = {
   color: '#fff'
 };
 
+//pseudo data used for testing
 let fakeServerData = {
   user: {
     name: 'Josh',
@@ -38,9 +39,11 @@ let fakeServerData = {
   }
 };
 
+//playlist component
 class PlaylistCounter extends Component {
   render() {
     return (
+      //...method extends the defaultStyle attribute specified above
       <div style={{...defaultStyle, width: '40%', display: 'inline-block'}}>
         <h2>{this.props.playlists.length} playlists</h2>
       </div>
@@ -48,15 +51,19 @@ class PlaylistCounter extends Component {
   }
 }
 
+// component contains the total hours
 class HoursCounter extends Component {
   render() {
+    // takes separate songs from ajax data and creates a new array full of all songs
     let allSongs = this.props.playlists.reduce((songs, eachPlaylist) => {
       return songs.concat(eachPlaylist.songs)
     } ,[])
+    // sums allSongs durations
     let totalDuration = allSongs.reduce((sum, eachSong) => {
       return sum + eachSong.duration
     }, 0)
     return (
+      //returns totalDuration in hours
       <div style={{...defaultStyle, width: '40%', display: 'inline-block'}}>
         <h2>{Math.round(totalDuration/60)} hours</h2>
       </div>
@@ -64,17 +71,20 @@ class HoursCounter extends Component {
   }
 }
 
+//this component filters playlists via user search query
 class Filter extends Component {
   render () {
     return (
       <div style={{defaultStyle}}>
         <img alt='test'/>
-        <input type='text'/>
+        {/* when typing, take the text input and bind it to the onTextChange method */}
+        <input type='text' onKeyUp={(event) => this.props.onTextChange(event.target.value)}/>
       </div>
     );
   }
 }
 
+//component displaying the playlists
 class Playlist extends Component {
   render () {
 
@@ -85,8 +95,9 @@ class Playlist extends Component {
         <img alt='test'/>
         <h3>{playlist.name}</h3>
         <ul>
+            {/* map songs within playlist to an unordered list */}
             {playlist.songs.map(song =>
-                <li>{song.name}</li>
+                <li key={song.name}>{song.name}</li>
             )}
         </ul>
       </div>
@@ -97,9 +108,15 @@ class Playlist extends Component {
 class App extends Component {
   constructor(){
     super();
-    this.state = {serverData: {}}
+    this.state = {
+      // initiate serverData object to be used by components
+      serverData: {},
+      filterString: ''
+    }
   }
+  //on load of page
   componentDidMount() {
+    //fake AJAX request using setTimeout to emulate server request
     setTimeout( () => {
       this.setState({serverData: fakeServerData});
     }, 1000);
@@ -108,18 +125,38 @@ class App extends Component {
 
     return (
       <div className="App">
+
+        {/* ternary operator used to specify that this.state.serverData.user exists */}
         {this.state.serverData.user ?
+
           <div>
             <h1 style= {{...defaultStyle, 'fontSize': '54px'}}>
             {this.state.serverData.user.name}'s Playlists
             </h1>
+
+          {/* sets props for PlaylistCounter component */}
           <PlaylistCounter playlists={this.state.serverData.user.playlists}/>
+
+          {/* sets props for HoursCounter component */}
           <HoursCounter playlists={this.state.serverData.user.playlists}/>
-          <Filter />
-          {this.state.serverData.user.playlists.map((playlist) =>
-              <Playlist playlist={playlist} />
+
+          {/* when text changes in the filter component, change the state of the filterString object */}
+          <Filter onTextChange={text => this.setState({filterString: text})}/>
+
+          {/* Filters and then maps all playlists based on user input */}
+          {this.state.serverData.user.playlists.filter(playlist =>
+
+            /* makes search queries case insensitive by reducing playlist names
+            and filter queries toLowerCase */
+            playlist.name.toLowerCase().includes(
+            this.state.filterString.toLowerCase())
+            ).map((playlist) =>
+              <Playlist key={playlist.name} playlist={playlist} />
           )}
-          </div> : <h1 style={defaultStyle}>Loading...</h1>
+          </div>
+
+          // if this.state.serverData.user does not yet exist, show loading... text
+          : <h1 style={defaultStyle}>Loading...</h1>
       }
       </div>
     );
