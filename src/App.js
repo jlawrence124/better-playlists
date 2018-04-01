@@ -1,43 +1,44 @@
 import React, { Component } from 'react';
 import './App.css';
+import queryString from 'query-string';
 
 let defaultStyle = {
   color: '#fff'
 };
 
 //pseudo data used for testing
-let fakeServerData = {
-  user: {
-    name: 'Josh',
-    playlists: [
-      {
-        name: 'My Favorites',
-        songs: [{name:'Beat It', duration: 1345},
-          {name:'Thriller', duration: 1322},
-          {name:'Dirty Diana', duration: 1445},
-          {name:'Black or White', duration: 1885}]
-      },
-      {
-        name: 'Discover Weekly',
-        songs: [{name:'I Cannot Feel My Face', duration: 1500},
-                {name:'Beyond the Sea', duration: 1280},
-                {name:'Boy Problems', duration: 1325}]
-      },
-      {
-        name: 'Gaming Playlist',
-        songs: [{name:'Legend Has It', duration: 1322},
-                {name:'I Am Legend', duration: 1285},
-                {name:'Legendary Song Name', duration: 1265}]
-      },
-      {
-        name: 'The LAST Playlist',
-        songs: [{name:'Last Dance', duration: 1166},
-                {name:'Last Week', duration: 1565},
-                {name:'Last Laugh', duration: 1229}]
-      }
-    ]
-  }
-};
+// let fakeServerData = {
+//   user: {
+//     name: 'Josh',
+//     playlists: [
+//       // {
+//       //   name: 'My Favorites',
+//       //   songs: [{name:'Beat It', duration: 1345},
+//       //     {name:'Thriller', duration: 1322},
+//       //     {name:'Dirty Diana', duration: 1445},
+//       //     {name:'Black or White', duration: 1885}]
+//       // },
+//       // {
+//       //   name: 'Discover Weekly',
+//       //   songs: [{name:'I Cannot Feel My Face', duration: 1500},
+//       //           {name:'Beyond the Sea', duration: 1280},
+//       //           {name:'Boy Problems', duration: 1325}]
+//       // },
+//       // {
+//       //   name: 'Gaming Playlist',
+//       //   songs: [{name:'Legend Has It', duration: 1322},
+//       //           {name:'I Am Legend', duration: 1285},
+//       //           {name:'Legendary Song Name', duration: 1265}]
+//       // },
+//       // {
+//       //   name: 'The LAST Playlist',
+//       //   songs: [{name:'Last Dance', duration: 1166},
+//       //           {name:'Last Week', duration: 1565},
+//       //           {name:'Last Laugh', duration: 1229}]
+//       // }
+//     ]
+//   }
+// };
 
 //playlist component
 class PlaylistCounter extends Component {
@@ -92,7 +93,7 @@ class Playlist extends Component {
 
     return (
       <div style={{...defaultStyle, display: 'inline-block', width: "25%"}}>
-        <img alt='test'/>
+        <img alt='playlist album' src={playlist.imageUrl} style={{width: '60px'}} />
         <h3>{playlist.name}</h3>
         <ul>
             {/* map songs within playlist to an unordered list */}
@@ -116,18 +117,49 @@ class App extends Component {
   }
   //on load of page
   componentDidMount() {
-    //fake AJAX request using setTimeout to emulate server request
-    setTimeout( () => {
-      this.setState({serverData: fakeServerData});
-    }, 1000);
+    //parse accessToken from URL into usable data
+    let parsed = queryString.parse(window.location.search);
+    let accessToken = parsed.access_token;
+
+    //use as a replacement for html/xml/ajax request
+    //takes two arguments,
+    fetch('https://api.spotify.com/v1/me', {
+      headers: {'Authorization': 'Bearer ' + accessToken}
+      //parse response as json data
+    }).then(response => response.json())
+    //setState of server data from response
+    .then(data => this.setState({
+      user: {
+        name: data.display_name
+      }
+    }))
+
+
+    fetch('https://api.spotify.com/v1/me/playlists', {
+      headers: {'Authorization': 'Bearer ' + accessToken}
+      //parse response as json data
+    }).then(response => response.json())
+
+    //setState of server data from response
+    .then(data => this.setState({
+        playlists: data.items.map(item => {
+            return {
+              name: item.name,
+              imageUrl: item.images[0].url,
+              songs: []
+            }
+        })
+    }))
   }
+
   render() {
     let playlistToRender =
-      // if serverData user exits
-      this.state.serverData.user ?
-
+      // if serverData user exists and user has playlists
+      this.state.user &&
+      this.state.playlists
+      ?
       // filter playlists
-      this.state.serverData.user.playlists.filter(playlist =>
+      this.state.playlists.filter(playlist =>
 
       /* makes search queries case insensitive by reducing playlist names
         and filter queries toLowerCase */
@@ -141,31 +173,32 @@ class App extends Component {
     return (
       <div className="App">
 
-        {/* ternary operator used to specify that this.state.serverData.user exists */}
-        {this.state.serverData.user ?
+        {/* ternary operator used to specify that if this.state.user exists */}
+        {this.state.user ?
 
-          <div>
+          <div key='componentWrapper'>
             <h1 style= {{...defaultStyle, 'fontSize': '54px'}}>
-            {this.state.serverData.user.name}'s Playlists
+            {this.state.user.name}'s Playlists
             </h1>
 
-          {/* sets props for PlaylistCounter component */}
-          <PlaylistCounter playlists={playlistToRender}/>
+            {/* sets props for PlaylistCounter component */}
+            <PlaylistCounter playlists={playlistToRender}/>
 
-          {/* sets props for HoursCounter component */}
-          <HoursCounter playlists={playlistToRender}/>
+            {/* sets props for HoursCounter component */}
+            <HoursCounter playlists={playlistToRender}/>
 
-          {/* when text changes in the filter component, change the state of the filterString object */}
-          <Filter onTextChange={text => this.setState({filterString: text})}/>
+            {/* when text changes in the filter component, change the state of the filterString object */}
+            <Filter onTextChange={text => this.setState({filterString: text})}/>
 
-          {/* maps all playlists based on user input */}
-          {playlistToRender.map((playlist) =>
-              <Playlist key={playlist.name} playlist={playlist} />
-          )}
+            {/* maps all playlists based on user input */}
+            {playlistToRender.map((playlist) =>
+                <Playlist key={playlist.name} playlist={playlist} />
+            )}
           </div>
 
-          // if this.state.serverData.user does not yet exist, show loading... text
-          : <h1 style={defaultStyle}>Loading...</h1>
+          // if this.state.user does not yet exist, show loading... text
+          : <button onClick={() => window.location='http://localhost:8888/login'}
+            style={{padding: '20px', 'fontSize': '50px', 'marginTop': '20px'}}>Sign in with Spotify</button>
       }
       </div>
     );
